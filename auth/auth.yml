@@ -1,0 +1,55 @@
+kind: Group
+apiVersion: user.openshift.io/v1
+metadata:
+  name: AdministratorsGroupLDAP
+users:
+  - anaeem
+  - chrhamme
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admins1
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    name: AdministratorsGroupLDAP
+    apiGroup: rbac.authorization.k8s.io
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: ldap-secret
+  namespace: openshift-config
+data:
+  bindPassword: UmVkaGF0MTIzNA==
+type: Opaque
+---
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+ name: cluster
+spec:
+  identityProviders:
+    - ldap:
+        attributes:
+          email:
+            - mail
+          id:
+            - dn
+          name:
+            - cn
+          preferredUsername:
+            - uid
+        bindDN: 'uid=ocp-binddn,cn=sysaccounts,cn=etc,dc=arsalan,dc=io'
+        bindPassword:
+          name: ldap-secret
+        insecure: true
+        url: 'ldap://ipaserver.arsalan.io:389/cn=users,cn=accounts,dc=arsalan,dc=io?uid'
+      mappingMethod: claim
+      name: ipaserver
+      type: LDAP
+
